@@ -2,7 +2,7 @@ mod chord;
 mod note;
 
 use chord::Chord;
-use midly::{MetaMessage, MidiMessage, Timing, TrackEvent, TrackEventKind};
+use midly::{MetaMessage, MidiMessage, Timing, TrackEventKind};
 use std::time::Instant;
 
 fn main() {
@@ -31,62 +31,13 @@ fn main() {
     //let mut prev_note = None; // Option<(start, end)> delta tick of previous note (becomes Some(_) after first note)
     let mut i = 0;
     while i < smf.tracks[0].len() {
-        match &smf.tracks[0][i].kind.clone() {
-            /*TrackEventKind::Midi { channel: _, message } => {
-                if let MidiMessage::NoteOn { key: _, vel } = message {
-                    // musescore always adds 2 NoteOn events for each note
-                    // the first (smf.tracks[0][i]) is the start of the note
-                    // the second (smf.tracks[0][i + 1]) is the end of the note ("NoteOff", but it's actually a NoteOn with velocity 0)
-                    // the second event indicates the length of the note, so the first event's delta is always close to 0
-                    let user_micros_between_notes = if *vel != 0 { // this indicates the start of a note
-                        let now = Instant::now();
-                        std::io::stdin().read_line(&mut String::new()).unwrap();
-                        now.elapsed().as_micros() as f64
-                    } else {
-                        0.0 // do not use this!
-                    };
-
-                    match prev_note {
-                        None => { // this is triggered for the first note only
-                            prev_note = Some((smf.tracks[0][i].delta.as_int() as f64, smf.tracks[0][i + 1].delta.as_int() as f64));
-                            i += 1;
-                        }
-                        Some(prev) => {
-                            let current_note = (smf.tracks[0][i].delta.as_int() as f64, smf.tracks[0][i + 1].delta.as_int() as f64);
-                            
-                            // time between the start of the previous note and the start of the current note
-                            let ticks_between_notes = current_note.0 + prev.0 + prev.1;
-
-                            // microseconds between the notes in the midi file (not the user input)
-                            // tks * (beat / tks) * (micros / beat)
-                            let file_micros_between_notes = ticks_between_notes / ticks_per_beat * start_micros_per_beat;
-
-                            let frac_of_tempo = file_micros_between_notes / start_micros_per_beat;
-
-                            smf.tracks[0].insert(i - 2, TrackEvent {
-                                delta: 0.into(),
-                                kind: TrackEventKind::Meta(MetaMessage::Tempo(
-                                    ((user_micros_between_notes / frac_of_tempo) as u32).into()
-                                ))
-                            });
-
-                            i += 2;
-
-                            prev_note = Some(current_note);
-                        }
-                    }
-                }
-            }*/
-            TrackEventKind::Meta(message) => {
-                if let MetaMessage::Tempo(micros_per_beat) = message {
-                    println!("Micros per beat: {}", micros_per_beat);
-                    start_micros_per_beat = micros_per_beat.as_int() as f64;
-                    micros_per_tick = start_micros_per_beat / ticks_per_beat;
-                    println!("Micros per tick: {}", micros_per_tick);
-                }
+        if let TrackEventKind::Meta(message) = &smf.tracks[0][i].kind.clone() {
+            if let MetaMessage::Tempo(micros_per_beat) = message {
+                println!("Micros per beat: {}", micros_per_beat);
+                start_micros_per_beat = micros_per_beat.as_int() as f64;
+                micros_per_tick = start_micros_per_beat / ticks_per_beat;
+                println!("Micros per tick: {}", micros_per_tick);
             }
-
-            _ => {}
         }
         i += 1;
     }
